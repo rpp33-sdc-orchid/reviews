@@ -7,22 +7,22 @@ CREATE TABLE review (
   primary key (id),
   product_id integer,
   rating smallint,
+  date date,
   summary varchar(60),
-  recommend boolean,
-  response varchar,
   body varchar(1000),
-  creation_date date,
+  recommend boolean,
+  reported boolean,
   reviewer_name varchar,
-  helpfulness smallint,
-  email varchar,
-  reported boolean
+  reviewer_email varchar,
+  response varchar,
+  helpfulness smallint
 );
 
 CREATE TABLE photo (
   id serial not null,
   primary key (id),
-  photo_url varchar,
   review_id serial,
+  url varchar,
   foreign key (review_id) references review (id)
 );
 
@@ -30,14 +30,15 @@ CREATE TABLE characteristic (
   id serial not null,
   primary key (id),
   product_id integer,
-  category varchar
+  name varchar
 );
 
 CREATE TABLE review_characteristic (
   id serial not null,
   primary key (id),
-  review_id serial,
   characteristic_id serial,
+  review_id serial,
+  value smallint,
   foreign key (review_id) references review (id),
   foreign key (characteristic_id) references characteristic (id)
 );
