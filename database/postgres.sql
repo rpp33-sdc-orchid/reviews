@@ -3,13 +3,12 @@ CREATE DATABASE sdc_reviews;
 \c sdc_reviews;
 
 CREATE TABLE review (
-  id serial not null,
-  primary key (id),
+  id serial primary key,
   product_id integer,
   rating smallint,
-  date date,
-  summary varchar(60),
-  body varchar(1000),
+  date bigint,
+  summary varchar,
+  body varchar,
   recommend boolean,
   reported boolean,
   reviewer_name varchar,
@@ -19,23 +18,20 @@ CREATE TABLE review (
 );
 
 CREATE TABLE photo (
-  id serial not null,
-  primary key (id),
+  id serial primary key,
   review_id serial,
   url varchar,
   foreign key (review_id) references review (id)
 );
 
 CREATE TABLE characteristic (
-  id serial not null,
-  primary key (id),
+  id serial primary key,
   product_id integer,
   name varchar
 );
 
 CREATE TABLE review_characteristic (
-  id serial not null,
-  primary key (id),
+  id serial primary key,
   characteristic_id serial,
   review_id serial,
   value smallint,
