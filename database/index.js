@@ -7,9 +7,9 @@ const pool = new Pool({
   port: 5432,
 })
 
-// GET
-const getReview = (request, response) => {
-  pool.query('SELECT * FROM review ORDER BY id ASC LIMIT 10', (error, results) => {
+// GET ALL
+const getReviews = (request, response) => {
+  pool.query('SELECT * FROM review ORDER BY id ASC LIMIT 50', (error, results) => {
     if (error) {
       throw error
     }
@@ -18,9 +18,40 @@ const getReview = (request, response) => {
 }
 
 // CONDITIONAL GET
-const getReviewById = (request, response) => {
-  const id = parseInt(request.params.id)
-  pool.query('SELECT * FROM review WHERE id = $1', [id], (error, results) => {
+const getReviewsByParams = (request, response) => {
+
+  const product_id = parseInt(request.params.product_id);
+  const sort = request.params.sort;
+  const count = parseInt(request.params.count);
+  if (sort === 'newest') {
+    pool.query('SELECT * FROM review WHERE product_id = $1 ORDER BY date DESC LIMIT $2', [product_id, count], (error, results) => {
+      if (error) {
+        throw error
+      }
+      response.status(200).json(results.rows)
+    })
+  } else if (sort === 'helpful') {
+    pool.query('SELECT * FROM review WHERE product_id = $1 ORDER BY helpfulness DESC LIMIT $2', [product_id, count], (error, results) => {
+      if (error) {
+        throw error
+      }
+      response.status(200).json(results.rows)
+    })
+  } else if (sort === 'relevant') {
+    pool.query('SELECT * FROM review WHERE product_id = $1 ORDER BY helpfulness DESC LIMIT $2', [product_id, count], (error, results) => {
+      if (error) {
+        throw error
+      }
+      response.status(200).json(results.rows)
+    })
+  } else {
+    response.status(404).json('Error: Incorrect GET parameters provided.');
+  }
+}
+
+// GET METADATA
+const getReviewsMetadata = (request, response) => {
+  pool.query('SELECT * FROM review ORDER BY id ASC LIMIT 50', (error, results) => {
     if (error) {
       throw error
     }
@@ -70,11 +101,7 @@ const getReviewById = (request, response) => {
 // }
 
 module.exports = {
-  getReview,
-  getReviewById
-  // getUsers,
-  // getUserById,
-  // createUser,
-  // updateUser,
-  // deleteUser,
+  getReviews,
+  getReviewsByParams,
+  getReviewsMetadata
 };
