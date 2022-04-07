@@ -9,7 +9,19 @@ const pool = new Pool({
 
 // GET ALL
 const getReviews = (request, response) => {
-  pool.query('SELECT * FROM review ORDER BY id ASC LIMIT 50', (error, results) => {
+  const product_id = parseInt(request.params.product_id);
+  pool.query(`SELECT id, product_id, rating, summary, recommend, response, body, date, reported, reviewer_name, review_email, response, helpfulness
+      (
+        SELECT array_to_json(array_agg(row_to_json(a)))
+        FROM (
+          SELECT id, url
+          FROM photo
+          WHERE review_id=review.id
+          ORDER BY POSITION ASC
+        ) a
+      ) AS photo
+    FROM review
+    WHERE product_id = ${product_id}`, (error, results) => {
     if (error) {
       throw error;
     }
@@ -36,6 +48,7 @@ const getReviewsByParams = (request, response) => {
         throw error;
       }
       response.status(200).json(results.rows);
+      console.log(results.rows);
     })
   } else if (sort === 'relevant') {
     pool.query('SELECT * FROM review WHERE product_id = $1 ORDER BY helpfulness DESC LIMIT $2', [product_id, count], (error, results) => {
