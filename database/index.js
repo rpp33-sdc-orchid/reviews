@@ -7,12 +7,13 @@ const pool = new Pool({
   port: 5432,
 })
 
-// GET ALL
+// GET REVIEWS BY PRODUCT ID
 const getReviews = (request, response) => {
-  const product_id = parseInt(request.params.product_id);
-  const sort = request.params.sort === 'relevant' ? 'helpfulness DESC, DATE DESC' : request.params.sort === 'helpful' ? 'helpfulness DESC' : 'date DESC';
-  const count = parseInt(request.params.count);
-  const page = parseInt(request.params.count);
+  const product_id = request.query.product_id;
+  const page = request.query.page || 1;
+  const sort = request.query.sort === 'relevant' ? 'helpfulness DESC, DATE DESC' : request.params.sort === 'helpful' ? 'helpfulness DESC' : 'date DESC';
+  const count = request.query.count || 5;
+
   pool.query(`SELECT json_build_object(
     'product', ${product_id},
     'page', ${page},
@@ -39,27 +40,73 @@ const getReviews = (request, response) => {
   )
   FROM review r
   WHERE r.product_id IN ($1)
-  LIMIT ${count}`, [product_id], (error, results) => {
+  LIMIT ${count}`, [product_id], (error, success) => {
     if (error) {
       throw error;
     }
-    response.status(200).json(results.rows);
+    response.status(200).json(success.rows[0].json_build_object);
   })
 }
 
-// GET METADATA
+// GET REVIEW METADATA
 const getReviewsMetadata = (request, response) => {
-  const product_id = parseInt(request.params.product_id);
+  const product_id = request.query.product_id;
 
-  pool.query('SELECT * FROM review WHERE product_id = $1 ??????', [product_id], (error, results) => {
+  pool.query(`SELECT json_build_object(
+    'product_id', product_id,
+    'ratings',
+      (SELECT json_object_agg(
+        rating,
+        review_count
+      )
+      FROM
+        (SELECT
+          rating,
+          count(*) AS review_count
+        FROM review
+        WHERE product_id =$1
+        GROUP BY rating
+      ) r),
+    'recommended',
+      (SELECT json_object_agg(
+        recommend,
+        review_count)
+      FROM (
+        SELECT
+          recommend,
+          count(*) AS review_count
+        FROM review
+        WHERE product_id = $1
+        GROUP BY recommend
+      ) re),
+    'characteristics',
+      (SELECT json_object_agg(
+        name, json_build_object(
+            'id', id,
+            'value', value
+      ))
+      FROM (
+        SELECT c.name,
+              c.id,
+              sum(value)/count(*) AS value
+        FROM characteristic c
+        LEFT JOIN review_characteristic rc
+        ON c.id = rc.characteristic_id
+        WHERE c.product_id = $1
+        GROUP BY  c.name, c.id
+        ) r
+    )
+  )
+  FROM review
+  WHERE product_id = $1`, [product_id], (error, success) => {
     if (error) {
       throw error;
     }
-    response.status(200).json(results.rows);
+    response.status(200).json(success.rows[0].json_build_object);
   })
 };
 
-// POST
+// POST NEW REVIEW
 const createReview = (request, response) => {
   const { product_id, rating, summary, body, recommend, name, email, photos, characteristics } = request.body
 
@@ -71,7 +118,7 @@ const createReview = (request, response) => {
   })
 }
 
-// UPDATE
+// UPDATE REVIEW HELPFULNESS
 const updateHelpful = (request, response) => {
   const review_id = parseInt(request.params.review_id)
   const helpfulness = request.body;
@@ -88,7 +135,7 @@ const updateHelpful = (request, response) => {
   )
 }
 
-// UPDATE
+// UPDATE REVIEW REPORTED
 const updateReport = (request, response) => {
   const review_id = parseInt(request.params.review_id)
   const reported = request.body;
@@ -104,18 +151,6 @@ const updateReport = (request, response) => {
     }
   )
 }
-
-// DELETE
-// const deleteReview = (request, response) => {
-//   const id = parseInt(request.params.id)
-
-//   pool.query('DELETE FROM review WHERE id = $1', [id], (error, results) => {
-//     if (error) {
-//       throw error
-//     }
-//     response.status(200).send(`User deleted with ID: ${id}`)
-//   })
-// }
 
 module.exports = {
   getReviews,
