@@ -10,57 +10,42 @@ const pool = new Pool({
 // GET ALL
 const getReviews = (request, response) => {
   const product_id = parseInt(request.params.product_id);
-  pool.query(`SELECT id, product_id, rating, summary, recommend, response, body, date, reported, reviewer_name, review_email, response, helpfulness
-      (
-        SELECT array_to_json(array_agg(row_to_json(a)))
-        FROM (
-          SELECT id, url
-          FROM photo
-          WHERE review_id=review.id
-          ORDER BY POSITION ASC
-        ) a
-      ) AS photo
-    FROM review
-    WHERE product_id = ${product_id}`, (error, results) => {
+  const sort = request.params.sort === 'relevant' ? 'helpfulness DESC, DATE DESC' : request.params.sort === 'helpful' ? 'helpfulness DESC' : 'date DESC';
+  const count = parseInt(request.params.count);
+  const page = parseInt(request.params.count);
+  pool.query(`SELECT json_build_object(
+    'product', ${product_id},
+    'page', ${page},
+    'count', ${count},
+    'results', json_agg(
+      json_build_object(
+        'review_id', r.id,
+        'rating', r.rating,
+        'summary', r.summary,
+        'recommend', r.recommend,
+        'response', r.response,
+        'body', r.body,
+        'date', r.date,
+        'reviewer_name', r.reviewer_name,
+        'helpfulness', r.helpfulness,
+        'photos', (SELECT coalesce(json_agg(
+                    json_build_object(
+                      'id', id,
+                      'url', url
+                  )), '[]'::json) AS Photos FROM photo WHERE r.id = review_id
+        )
+      ) ORDER BY ${sort}
+    )
+  )
+  FROM review r
+  WHERE r.product_id IN ($1)
+  LIMIT ${count}`, [product_id], (error, results) => {
     if (error) {
       throw error;
     }
     response.status(200).json(results.rows);
   })
 }
-
-// CONDITIONAL GET
-const getReviewsByParams = (request, response) => {
-
-  const product_id = parseInt(request.params.product_id);
-  const sort = request.params.sort;
-  const count = parseInt(request.params.count);
-  if (sort === 'newest') {
-    pool.query('SELECT * FROM review WHERE product_id = $1 ORDER BY date DESC LIMIT $2', [product_id, count], (error, results) => {
-      if (error) {
-        throw error;
-      }
-      response.status(200).json(results.rows);
-    })
-  } else if (sort === 'helpful') {
-    pool.query('SELECT * FROM review WHERE product_id = $1 ORDER BY helpfulness DESC LIMIT $2', [product_id, count], (error, results) => {
-      if (error) {
-        throw error;
-      }
-      response.status(200).json(results.rows);
-      console.log(results.rows);
-    })
-  } else if (sort === 'relevant') {
-    pool.query('SELECT * FROM review WHERE product_id = $1 ORDER BY helpfulness DESC LIMIT $2', [product_id, count], (error, results) => {
-      if (error) {
-        throw error;
-      }
-      response.status(200).json(results.rows);
-    });
-  } else {
-    response.status(404).json('Error: Incorrect GET parameters provided.');
-  }
-};
 
 // GET METADATA
 const getReviewsMetadata = (request, response) => {
@@ -134,7 +119,6 @@ const updateReport = (request, response) => {
 
 module.exports = {
   getReviews,
-  getReviewsByParams,
   getReviewsMetadata,
   createReview,
   updateHelpful,

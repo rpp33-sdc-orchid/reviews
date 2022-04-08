@@ -11,13 +11,11 @@ app.get('/', (request, response) => {
   response.json({ info: 'Node.js, Express, and Postgres API' });
 })
 
-app.get('/reviews/:product_id', db.getReviews)
-app.get('/reviews/:product_id/:sort/:count', db.getReviewsByParams)
-app.get('/reviews/meta/:product_id', db.getReviewsMetadata)
-app.post('/reviews/createReview', db.createReview)
-app.put('/reviews/:review_id/helpful', db.updateHelpful)
-app.put('/reviews/:reviews_id/report', db.updateReport)
-// app.delete('/reviews/delete/review_id', db.deleteReview)
+app.get('/reviews/:product_id/:sort/:page/:count', db.getReviews);
+app.get('/reviews/meta/:product_id', db.getReviewsMetadata);
+app.post('/reviews/createReview', db.createReview);
+app.put('/reviews/:review_id/helpful', db.updateHelpful);
+app.put('/reviews/:reviews_id/report', db.updateReport);
 
 app.listen(port, () => {
   console.log(`App running on port ${port}.`);
