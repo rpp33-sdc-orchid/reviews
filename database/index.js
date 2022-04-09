@@ -108,7 +108,7 @@ const getReviewsMetadata = (request, response) => {
 
 // POST NEW REVIEW
 const createReview = (request, response) => {
-  const { product_id, rating, summary, body, recommend, reviewer_name, reviewer_email, photos, characteristics } = request.body
+  const { product_id, rating, summary, body, recommend, reviewer_name, reviewer_email, photos, characteristics } = request.query;
 
   pool.query('INSERT INTO review (product_id, rating, date, summary, body, recommend, reported, reviewer_name, reviewer_email, helpfulness) VALUES ($1, $2, CURRENT_DATE, $3, $4, $5, false, $6, $7, 0)', [product_id, rating, summary, body, recommend, name, email, photos, characteristics], (error, reviewSuccess) => {
     if (error) {
@@ -119,7 +119,7 @@ const createReview = (request, response) => {
         if (error) {
           throw error;
         }
-        response.status(201).send(photoSuccess);
+        // response.status(201).send(photoSuccess);
       })
     }
     if (Object.keys(characteristics).length > 0) {
@@ -128,7 +128,7 @@ const createReview = (request, response) => {
           if (error) {
             throw error;
           }
-          response.status(201).send(characteristicSuccess);
+          // response.status(201).send(characteristicSuccess);
         })
       }
     }
@@ -138,32 +138,32 @@ const createReview = (request, response) => {
 
 // UPDATE REVIEW HELPFULNESS
 const updateHelpful = (request, response) => {
-  const review_id = parseInt(request.params.review_id)
+  const review_id = request.query.review_id;
 
   pool.query(
     'UPDATE review SET helpfulness = helpfulness + 1 WHERE id = $1',
     [review_id],
-    (error, results) => {
+    (error, success) => {
       if (error) {
         throw error;
       }
-      response.status(200).send(`Updated Helpfulness on Review ID: ${review_id}`);
+      response.status(204).send(success);
     }
   )
 }
 
 // UPDATE REVIEW REPORTED
-const updateReport = (request, response) => {
-  const review_id = parseInt(request.params.review_id)
+const updateReport = (request, success) => {
+  const review_id = request.query.review_id;
 
   pool.query(
-    'UPDATE review SET reported = true WHERE id = $1',
+    'UPDATE review SET reported = t WHERE id = $1',
     [review_id],
-    (error, results) => {
+    (error, success) => {
       if (error) {
         throw error;
       }
-      response.status(200).send(`Updated Report on Review ID: ${review_id}`);
+      response.status(204).send(success);
     }
   )
 }

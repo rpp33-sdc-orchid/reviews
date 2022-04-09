@@ -1,7 +1,7 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const app = express();
-const port = 3000;
+const port = 8000;
 const db = require('../database/index.js');
 
 app.use(bodyParser.json());
@@ -13,10 +13,12 @@ app.get('/', (request, response) => {
 
 app.get('/reviews', db.getReviews);
 app.get('/reviews/meta', db.getReviewsMetadata);
-app.post('/reviews/createReview', db.createReview);
-app.put('/reviews/:review_id/helpful', db.updateHelpful);
-app.put('/reviews/:reviews_id/report', db.updateReport);
+app.post('/reviews', db.createReview);
+app.put('/reviews/helpful', db.updateHelpful);
+app.put('/reviews/report', db.updateReport);
 
 app.listen(port, () => {
   console.log(`App running on port ${port}.`);
 })
+
+module.exports = app;
