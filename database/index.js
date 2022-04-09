@@ -121,16 +121,15 @@ const createReview = (request, response) => {
 // UPDATE REVIEW HELPFULNESS
 const updateHelpful = (request, response) => {
   const review_id = parseInt(request.params.review_id)
-  const helpfulness = request.body;
 
   pool.query(
-    'UPDATE review SET helpfulness = $1 WHERE id = $2',
-    [helpfulness, review_id],
+    'UPDATE review SET helpfulness = helpfulness + 1 WHERE id = $1',
+    [review_id],
     (error, results) => {
       if (error) {
         throw error;
       }
-      response.status(200).send(`Review modified with ID: ${review_id}`);
+      response.status(200).send(`Updated Helpfulness on Review ID: ${review_id}`);
     }
   )
 }
@@ -138,16 +137,15 @@ const updateHelpful = (request, response) => {
 // UPDATE REVIEW REPORTED
 const updateReport = (request, response) => {
   const review_id = parseInt(request.params.review_id)
-  const reported = request.body;
 
   pool.query(
-    'UPDATE review SET reported = $1 WHERE id = $2',
-    [reported, review_id],
+    'UPDATE review SET reported = true WHERE id = $1',
+    [review_id],
     (error, results) => {
       if (error) {
         throw error;
       }
-      response.status(200).send(`Review modified with ID: ${review_id}`);
+      response.status(200).send(`Updated Report on Review ID: ${review_id}`);
     }
   )
 }
