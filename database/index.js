@@ -108,13 +108,31 @@ const getReviewsMetadata = (request, response) => {
 
 // POST NEW REVIEW
 const createReview = (request, response) => {
-  const { product_id, rating, summary, body, recommend, name, email, photos, characteristics } = request.body
+  const { product_id, rating, summary, body, recommend, reviewer_name, reviewer_email, photos, characteristics } = request.body
 
-  pool.query('INSERT INTO review (product_id, rating, summary, body, recommend, name, email, photos, characteristics) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)', [product_id, rating, summary, body, recommend, name, email, photos, characteristics], (error, results) => {
+  pool.query('INSERT INTO review (product_id, rating, date, summary, body, recommend, reported, reviewer_name, reviewer_email, helpfulness) VALUES ($1, $2, CURRENT_DATE, $3, $4, $5, false, $6, $7, 0)', [product_id, rating, summary, body, recommend, name, email, photos, characteristics], (error, reviewSuccess) => {
     if (error) {
       throw error;
     }
-    response.status(201).send(`Review added with ID: ${result.insertId}`);
+    if (photos.length > 0) {
+      pool.query('INSERT INTO photo (review_id, url) VALUES ($1, $2)', [reviewSuccess.rows[0].id, photo.url], (error, photoSuccess) => {
+        if (error) {
+          throw error;
+        }
+        response.status(201).send(photoSuccess);
+      })
+    }
+    if (Object.keys(characteristics).length > 0) {
+      for (let key in characteristics) {
+        pool.query(`INSERT INTO review_characteristic (characteristic_id, review_id, value) VALUES ((SELECT id FROM characteristic WHERE (product_id=${product_id} AND name = $2)), $1, $3)`, [reviewSuccess.rows[0].id, key, characteristics[key].value], (error, characteristicSuccess) => {
+          if (error) {
+            throw error;
+          }
+          response.status(201).send(characteristicSuccess);
+        })
+      }
+    }
+    response.status(201).send(reviewSuccess);
   })
 }
 
