@@ -23,6 +23,7 @@
     "anymatch": "^3.1.2",
     "argparse": "^1.0.10",
     "asynckit": "^0.4.0",
+    "axios": "^0.26.1",
     "babel-jest": "^27.5.1",
     "babel-plugin-istanbul": "^6.1.1",
     "babel-plugin-jest-hoist": "^27.5.1",

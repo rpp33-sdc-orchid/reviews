@@ -13,6 +13,8 @@ const getReviews = (request, response) => {
   const page = request.query.page || 1;
   const sort = request.query.sort === 'relevant' ? 'helpfulness DESC, DATE DESC' : request.params.sort === 'helpful' ? 'helpfulness DESC' : 'date DESC';
   const count = request.query.count || 5;
+  // console.log('query', request.query);
+  // console.log('params', request.params);
 
   pool.query(`SELECT json_build_object(
     'product', ${product_id},
@@ -108,13 +110,13 @@ const getReviewsMetadata = (request, response) => {
 
 // POST NEW REVIEW
 const createReview = (request, response) => {
-  const { product_id, rating, summary, body, recommend, reviewer_name, reviewer_email, photos, characteristics } = request.query;
-
-  pool.query('INSERT INTO review (product_id, rating, date, summary, body, recommend, reported, reviewer_name, reviewer_email, helpfulness) VALUES ($1, $2, CURRENT_DATE, $3, $4, $5, false, $6, $7, 0)', [product_id, rating, summary, body, recommend, name, email, photos, characteristics], (error, reviewSuccess) => {
+  const { product_id, rating, summary, body, recommend, reviewer_name, reviewer_email, photos, characteristics } = request.body
+  const date = Date.now();
+  pool.query(`INSERT INTO review (product_id, rating, date, summary, body, recommend, reported, reviewer_name, reviewer_email, helpfulness) VALUES (${product_id}, ${rating}, ${date}, '${summary}', '${body}', ${recommend}, false, '${reviewer_name}', '${reviewer_email}', 0)`, (error, reviewSuccess) => {
     if (error) {
       throw error;
     }
-    if (photos.length > 0) {
+    if (photos.length > 0) {  //loop more than 1 photo?
       pool.query('INSERT INTO photo (review_id, url) VALUES ($1, $2)', [reviewSuccess.rows[0].id, photo.url], (error, photoSuccess) => {
         if (error) {
           throw error;
