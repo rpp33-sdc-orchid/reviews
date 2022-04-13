@@ -14,8 +14,8 @@ app.get('/', (request, response) => {
 app.get('/reviews', db.getReviews);
 app.get('/reviews/meta', db.getReviewsMetadata);
 app.post('/reviews', db.createReview);
-app.put('/reviews/helpful', db.updateHelpful);
-app.put('/reviews/report', db.updateReport);
+app.put('/reviews/:review_id/helpful', db.updateHelpful);
+app.put('/reviews/:review_id/report', db.updateReport);
 
 app.listen(port, () => {
   console.log(`App running on port ${port}.`);

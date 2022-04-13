@@ -13,8 +13,6 @@ const getReviews = (request, response) => {
   const page = request.query.page || 1;
   const sort = request.query.sort === 'relevant' ? 'helpfulness DESC, DATE DESC' : request.params.sort === 'helpful' ? 'helpfulness DESC' : 'date DESC';
   const count = request.query.count || 5;
-  // console.log('query', request.query);
-  // console.log('params', request.params);
 
   pool.query(`SELECT json_build_object(
     'product', ${product_id},
@@ -41,7 +39,7 @@ const getReviews = (request, response) => {
     )
   )
   FROM review r
-  WHERE r.product_id IN ($1)
+  WHERE r.reported = 'f' AND r.product_id IN ($1)
   LIMIT ${count}`, [product_id], (error, success) => {
     if (error) {
       throw error;
@@ -112,7 +110,11 @@ const getReviewsMetadata = (request, response) => {
 const createReview = (request, response) => {
   const { product_id, rating, summary, body, recommend, reviewer_name, reviewer_email, photos, characteristics } = request.body
   const date = Date.now();
-  pool.query(`INSERT INTO review (product_id, rating, date, summary, body, recommend, reported, reviewer_name, reviewer_email, helpfulness) VALUES (${product_id}, ${rating}, ${date}, '${summary}', '${body}', ${recommend}, false, '${reviewer_name}', '${reviewer_email}', 0)`, (error, reviewSuccess) => {
+  pool.query(`INSERT INTO review (
+    product_id, rating, date, summary, body, recommend, reported, reviewer_name, reviewer_email, helpfulness
+    ) VALUES (
+      ${product_id}, ${rating}, ${date}, '${summary}', '${body}', '${recommend}', 'f', '${reviewer_name}', '${reviewer_email}', 0
+      )`, (error, reviewSuccess) => {
     if (error) {
       throw error;
     }
@@ -155,11 +157,11 @@ const updateHelpful = (request, response) => {
 }
 
 // UPDATE REVIEW REPORTED
-const updateReport = (request, success) => {
+const updateReport = (request, response) => {
   const review_id = request.query.review_id;
 
   pool.query(
-    'UPDATE review SET reported = t WHERE id = $1',
+    `UPDATE review SET reported = 't' WHERE id = $1`,
     [review_id],
     (error, success) => {
       if (error) {
