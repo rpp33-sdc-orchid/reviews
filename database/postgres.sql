@@ -39,7 +39,15 @@ CREATE TABLE review_characteristic (
   foreign key (characteristic_id) references characteristic (id)
 );
 
+-- \copy...from filepath for ETL process
+
 SELECT setval(pg_get_serial_sequence('review', 'id'), coalesce(max(id), 0)+1 , false) FROM review;
 SELECT setval(pg_get_serial_sequence('photo', 'id'), coalesce(max(id), 0)+1 , false) FROM photo;
 SELECT setval(pg_get_serial_sequence('characteristic', 'id'), coalesce(max(id), 0)+1 , false) FROM characteristic;
 SELECT setval(pg_get_serial_sequence('review_characteristic', 'id'), coalesce(max(id), 0)+1 , false) FROM review_characteristic;
+
+CREATE INDEX ON review(product_id);
+CREATE INDEX ON photo(review_id);
+CREATE INDEX ON review_characteristic(characteristic_id);
+CREATE INDEX ON review_characteristic(review_id);
+CREATE INDEX ON characteristic(product_id);
