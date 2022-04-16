@@ -1,3 +1,4 @@
+-- initialize database and table(s)
 CREATE DATABASE sdc_reviews;
 
 \c sdc_reviews;
@@ -39,15 +40,21 @@ CREATE TABLE review_characteristic (
   foreign key (characteristic_id) references characteristic (id)
 );
 
--- \copy...from filepath for ETL process
+-- \copy csv files from filepath for ETL process
+\COPY review FROM '/Users/mac/HRRPP33/sdc-csv-files/reviews.csv' DELIMITER ',' CSV HEADER;
+\COPY photo FROM '/Users/mac/HRRPP33/sdc-csv-files/reviews_photos.csv' DELIMITER ',' CSV HEADER;
+\COPY characteristic FROM '/Users/mac/HRRPP33/sdc-csv-files/characteristics.csv' DELIMITER ',' CSV HEADER;
+\COPY review_characteristic FROM '/Users/mac/HRRPP33/sdc-csv-files/characteristic_reviews.csv' DELIMITER ',' CSV HEADER;
 
+-- manually synchronize any out-of-synch serial primary key id
 SELECT setval(pg_get_serial_sequence('review', 'id'), coalesce(max(id), 0)+1 , false) FROM review;
 SELECT setval(pg_get_serial_sequence('photo', 'id'), coalesce(max(id), 0)+1 , false) FROM photo;
 SELECT setval(pg_get_serial_sequence('characteristic', 'id'), coalesce(max(id), 0)+1 , false) FROM characteristic;
 SELECT setval(pg_get_serial_sequence('review_characteristic', 'id'), coalesce(max(id), 0)+1 , false) FROM review_characteristic;
 
+-- indexing ids for query optimization
 CREATE INDEX ON review(product_id);
 CREATE INDEX ON photo(review_id);
+CREATE INDEX ON characteristic(product_id);
 CREATE INDEX ON review_characteristic(characteristic_id);
 CREATE INDEX ON review_characteristic(review_id);
-CREATE INDEX ON characteristic(product_id);
