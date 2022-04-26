@@ -6,9 +6,10 @@ const db = require('../database/index.js');
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true, }));
+app.use(express.static('loaderio'));
 
 app.get('/', (request, response) => {
-  response.json({ info: 'Node.js, Express, and Postgres API' });
+  response.json('HR-RPP33 SDC Home Page');
 })
 
 app.get('/reviews', db.getReviews);
