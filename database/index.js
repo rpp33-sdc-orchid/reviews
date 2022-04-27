@@ -101,8 +101,12 @@ const getReviewsMetadata = (request, response) => {
   WHERE product_id = $1`, [product_id], (error, success) => {
     if (error) {
       throw error;
+    } else if (success.rows[0]) {
+      response.status(200).json(success.rows[0].json_build_object);
+    } else {
+      response.status(200).json('This product has no metadata.');
     }
-    response.status(200).json(success.rows[0].json_build_object);
+
   })
 };
 
