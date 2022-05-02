@@ -23,6 +23,6 @@ export default function () {
   let randomCount = Math.floor(Math.random() * 50);
 
   let getReviews = http.get(`http://localhost:8000/reviews?product_id=186&page=1&sort=helpful&count=3`);
-  check(getReviews, { "getReviews succeeded with status 200": (r) => r.status == 200 })
+  check(getReviews, { "/reviews succeeded with status 200": (r) => r.status == 200 })
   sleep(0.1);
 }

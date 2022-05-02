@@ -39,8 +39,7 @@ const getReviews = (request, response) => {
     )
   )
   FROM review r
-  WHERE r.reported = 'f' AND r.product_id IN ($1)
-  LIMIT ${count}`, [product_id], (error, success) => {
+  WHERE r.reported = 'f' AND r.product_id IN ($1) LIMIT ${count}`, [product_id], (error, success) => {
     if (error) {
       throw error;
     }
