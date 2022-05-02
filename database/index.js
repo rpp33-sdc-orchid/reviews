@@ -42,8 +42,9 @@ const getReviews = (request, response) => {
   WHERE r.reported = 'f' AND r.product_id IN ($1) LIMIT ${count}`, [product_id], (error, success) => {
     if (error) {
       throw error;
+    } else {
+      response.status(200).json(success.rows[0].json_build_object);
     }
-    response.status(200).json(success.rows[0].json_build_object);
   })
 }
 
