@@ -1,3 +1,17 @@
+const redis = require('redis');
+const Promise = require('bluebird');
+Promise.promisifyAll(redis);
+const redisClient = redis.createClient();
+redisClient.connect();
+// const redisClient = redis.createClient({
+//   host: 'localhost',
+//   port: 6379,
+//   password: ''
+// });
+// redisClient.on('error', err => {
+//   console.log('Error ' + err);
+// });
+
 const Pool = require('pg').Pool
 const pool = new Pool({
   user: 'ubuntu',
@@ -14,38 +28,95 @@ const getReviews = (request, response) => {
   const sort = request.query.sort === 'relevant' ? 'helpfulness DESC, DATE DESC' : request.params.sort === 'helpful' ? 'helpfulness DESC' : 'date DESC';
   const count = request.query.count || 5;
 
-  pool.query(`SELECT json_build_object(
-    'product', ${product_id},
-    'page', ${page},
-    'count', ${count},
-    'results', json_agg(
-      json_build_object(
-        'review_id', r.id,
-        'rating', r.rating,
-        'summary', r.summary,
-        'recommend', r.recommend,
-        'response', r.response,
-        'body', r.body,
-        'date', r.date,
-        'reviewer_name', r.reviewer_name,
-        'helpfulness', r.helpfulness,
-        'photos', (SELECT coalesce(json_agg(
-                    json_build_object(
-                      'id', id,
-                      'url', url
-                  )), '[]'::json) AS Photos FROM photo WHERE r.id = review_id
+  // redisClient.get(`Redis ID ${product_id}${page}${sort}${count}`, async (error, success) => {
+  //   if (error) {
+  //     console.error(error);
+  //   }
+  //   if (success) {
+  //     console.log('Cache Hit!');
+  //     response.status(200).json(JSON.parse(success));
+  //   } else {
+  //     console.log('Cache Miss!');
+  //     await pool.query(`SELECT json_build_object(
+  //       'product', ${product_id},
+  //       'page', ${page},
+  //       'count', ${count},
+  //       'results', json_agg(
+  //         json_build_object(
+  //           'review_id', r.id,
+  //           'rating', r.rating,
+  //           'summary', r.summary,
+  //           'recommend', r.recommend,
+  //           'response', r.response,
+  //           'body', r.body,
+  //           'date', r.date,
+  //           'reviewer_name', r.reviewer_name,
+  //           'helpfulness', r.helpfulness,
+  //           'photos', (SELECT coalesce(json_agg(
+  //                       json_build_object(
+  //                         'id', id,
+  //                         'url', url
+  //                     )), '[]'::json) AS Photos FROM photo WHERE r.id = review_id
+  //           )
+  //         ) ORDER BY ${sort}
+  //       )
+  //     )
+  //     FROM review r
+  //     WHERE r.reported = 'f' AND r.product_id IN ($1) LIMIT ${count}`, [product_id], (error, success) => {
+  //       if (error) {
+  //         throw error;
+  //       } else {
+  //         redisClient.set(`Redis ID ${product_id}${page}${sort}${count}`, JSON.stringify(success.rows[0].json_build_object));
+  //         response.status(200).json(success.rows[0].json_build_object);
+  //       }
+  //     })
+  //   }
+  // })
+
+  redisClient.get(`Redis ID ${product_id}${page}${sort}${count}`)
+    .then(async (cache) => {
+      if (cache) {
+        console.log('Cache Hit!');
+        response.status(200).json(JSON.parse(cache));
+      } else {
+        console.log('Cache Miss!');
+        await pool.query(`SELECT json_build_object(
+        'product', ${product_id},
+        'page', ${page},
+        'count', ${count},
+        'results', json_agg(
+          json_build_object(
+            'review_id', r.id,
+            'rating', r.rating,
+            'summary', r.summary,
+            'recommend', r.recommend,
+            'response', r.response,
+            'body', r.body,
+            'date', r.date,
+            'reviewer_name', r.reviewer_name,
+            'helpfulness', r.helpfulness,
+            'photos', (SELECT coalesce(json_agg(
+                        json_build_object(
+                          'id', id,
+                          'url', url
+                      )), '[]'::json) AS Photos FROM photo WHERE r.id = review_id
+            )
+          ) ORDER BY ${sort}
         )
-      ) ORDER BY ${sort}
-    )
-  )
-  FROM review r
-  WHERE r.reported = 'f' AND r.product_id IN ($1) LIMIT ${count}`, [product_id], (error, success) => {
-    if (error) {
-      throw error;
-    } else {
-      response.status(200).json(success.rows[0].json_build_object);
-    }
-  })
+      )
+      FROM review r
+      WHERE r.reported = 'f' AND r.product_id IN ($1) LIMIT ${count}`, [product_id], (error, success) => {
+          if (error) {
+            throw error;
+          } else {
+            redisClient.set(`Redis ID ${product_id}${page}${sort}${count}`, JSON.stringify(success.rows[0].json_build_object));
+            response.status(200).json(success.rows[0].json_build_object);
+          }
+        })
+      }
+    })
+    .catch((err) => { console.log('Error Caching', err) });
+
 }
 
 // GET REVIEW METADATA
