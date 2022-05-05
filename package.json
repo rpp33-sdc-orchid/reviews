@@ -173,7 +173,6 @@
     "minimist": "^1.2.5",
     "ms": "^2.1.2",
     "natural-compare": "^1.4.0",
-    "newrelic": "^8.10.0",
     "node-int64": "^0.4.0",
     "node-releases": "^2.0.2",
     "normalize-path": "^3.0.0",
